@@ -5,43 +5,49 @@ function CalculatorLexer(input) {
 	this.input = input;
 	this.c = input[0];
 	this.p = 0;
-	this.tokens = [];
 }
 
 CalculatorLexer.prototype.tokenize = function () {
+	var tokens = [];	
+
+	for (var t = this.nextToken(); t !== EOF; t = this.nextToken()) {
+		tokens.push(t)
+	}
+
+	return tokens;
+}
+
+CalculatorLexer.prototype.nextToken = function () {
 	while (this.c !== EOF) {
-
-		while (/\s/.test(this.c)) {
-			this.consume();
-		}
-
-		if (['(', ')', '+', '/', ',', '='].indexOf(this.c) > -1) {
-			this.emit(this.c);
+		if (/\s/.test(this.c)) {
+			this.consume(); continue;
+		} else if (['(', ')', '+', '/', ',', '='].indexOf(this.c) > -1) {
+			return this.symbol();
 		} else if (this.c === '*') {
-			if (this.input[this.p + 1] === '*') {
-				this.tokens.push('**');
+			this.consume();
+			if (this.c === '*') {
 				this.consume();
-				this.consume();
+				return '**';
 			} else {
-				this.emit('*');
+				return '*';
 			}
 		} else if (this.c === '-') {
 			if (this.isNumber(this.input[this.p + 1])) {
 				// this is a negative number
-				this.number();
+				return this.number();
 			} else {
-				this.emit('-');
+				return '-';
 			}
 		} else if (this.isNumber(this.c)) {
-			this.number();
+			return this.number();
 		} else if (this.isCharacter(this.c)) {
-			this.functionOrVariableName();
+			return this.functionOrVariableName();
 		} else {
 			throw 'Illegal: ' + this.c;
 		}
 	}
 
-	return this.tokens;
+	return EOF;
 }
 
 CalculatorLexer.prototype.isCharacter = function (c) {
@@ -50,6 +56,12 @@ CalculatorLexer.prototype.isCharacter = function (c) {
 
 CalculatorLexer.prototype.isNumber = function (d) {
 	return /^[0-9]$/.test(d);
+}
+
+CalculatorLexer.prototype.symbol = function () {
+	var c = this.c;
+	this.consume();
+	return c;
 }
 
 CalculatorLexer.prototype.number = function () {
@@ -65,7 +77,7 @@ CalculatorLexer.prototype.number = function () {
 		this.consume();
 	} while (this.isNumber(this.c));
 
-	this.tokens.push(result.join(''));
+	return result.join('');
 }
 
 CalculatorLexer.prototype.functionOrVariableName = function () {
@@ -75,12 +87,7 @@ CalculatorLexer.prototype.functionOrVariableName = function () {
 		this.consume();
 	} while (this.isCharacter(this.c));
 
-	this.tokens.push(result.join(''));
-}
-
-CalculatorLexer.prototype.emit = function (token) {
-	this.tokens.push(token);
-	this.consume();
+	return result.join('');
 }
 
 CalculatorLexer.prototype.consume = function () {

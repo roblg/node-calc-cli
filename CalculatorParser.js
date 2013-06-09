@@ -118,12 +118,7 @@ CalculatorParser.prototype._indexOfIdentifier = function (tokenArr) {
 	return -1;
 }
 
-CalculatorParser.prototype._parseHelper = function (tokenArr) {
-
-	this._handle
-
-	this._handleFuncCallsAndVarRefs(tokenArr);
-
+CalculatorParser.prototype._handleParenExpressions = function (tokenArr) {
 	// find first left paren. then find maching paren
 	var lparen;
 	do {
@@ -135,7 +130,9 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 		}
 		// console.log(tokenArr);
 	} while (lparen > -1);
+}
 
+CalculatorParser.prototype._handleExponentiation = function (tokenArr) {
 	var powIdx;
 	do {
 		powIdx = tokenArr.indexOf('**');
@@ -150,7 +147,19 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 			tokenArr.splice(powIdx - 1, 3, powExpr);
 		}
 	} while (powIdx > -1);
+}
 
+CalculatorParser.prototype._parseHelper = function (tokenArr) {
+
+	this._handleFuncCallsAndVarRefs(tokenArr);
+
+	this._handleParenExpressions(tokenArr);
+
+	this._handleExponentiation(tokenArr);
+
+	// order in this array matters. we want the operators with lower
+	// precedence to be resolved first. it sounds weird, but it's what we want
+	// in order to make the correct parse tree
 	var ops = ["+", "-", "*", "/"];
 
 	var i, // index into ops array
