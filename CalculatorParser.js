@@ -1,24 +1,37 @@
-function CalculatorParser(tokens) {
+function CalculatorParser(tokens, env) {
 	this.tokens = tokens; // tokenize the expression
+	this.env = env;
 }
 
-CalculatorParser.evaluate = function (expr) {
-	var c = new CalculatorParser(expr);
-	return CalculatorParser._eval(c.parse());
+CalculatorParser.evaluate = function (expr, env) {
+	var c = new CalculatorParser(expr, env);
+	return CalculatorParser._eval(c.parse(), env);
 }
 
-CalculatorParser._eval = function (node) {
+CalculatorParser._eval = function (node, env) {
 	if (node.type === 'number') {
 		return node.value;
 	} else if (node.type === 'expr') {
-		return this._eval(node.subtree);
+		return this._eval(node.subtree, env);
 	} else if (node.type === 'pow') {
-		return Math.pow( this._eval(node.left), this._eval(node.right) );
+		return Math.pow( 
+			this._eval(node.left, env), 
+			this._eval(node.right, env)
+		);
 	} else if (node.type === 'funcCall') {
-		return Math[node.funcName].apply(null, node.args.map(this._eval, this));
+		return Math[node.funcName].apply(null, 
+			node.args.map(function (arg) { return this._eval(arg, env); }, this));
+	} else if (node.type === 'assignment') {
+		env[node.varName] = this._eval(node.expr, env);
+		return env[node.varName];
+	} else if (node.type === 'variable') {
+		if (typeof env[node.varName] === 'undefined') {
+			throw 'Undefined variable: ' + node.varName;
+		}
+		return env[node.varName];
 	} else if (node.type === 'op') {
-		var left = this._eval(node.left);
-		var right = this._eval(node.right);
+		var left = this._eval(node.left, env);
+		var right = this._eval(node.right, env);
 		switch (node.value) {
 			case '*':
 				return left * right;
@@ -34,28 +47,40 @@ CalculatorParser._eval = function (node) {
 }
 
 CalculatorParser.prototype.parse = function () {
-	return this._parseHelper(this.tokens);
+	// TODO: error checking
+	if (this.tokens.length >= 2 && this.tokens[1] === '=') {
+		// assignment
+		return { type: 'assignment', varName: this.tokens[0], expr: this._parseHelper(this.tokens.slice(2)) }
+	} else {
+		return this._parseHelper(this.tokens);
+	}
 }
 
 CalculatorParser.prototype._parseParenExpr = function (tokenArr) {
 	return { type: 'expr', subtree: this._parseHelper(tokenArr) }
 }
 
-CalculatorParser.prototype._handleFuncCalls = function (tokenArr) {
-	var funcCallIdx;
+CalculatorParser.prototype._handleFuncCallsAndVarRefs = function (tokenArr) {
+	var idIdx;
 	do {
-		funcCallIdx = this._indexOfFuncName(tokenArr);
-		if (funcCallIdx > -1) {
-			var lparen = funcCallIdx + 1;
-			var rparen = this._findMatchingParen(tokenArr, lparen);
-			var funcCallExpr = {
-				type: 'funcCall',
-				funcName: tokenArr[funcCallIdx],
-				args: this._parseFunctionArgs(tokenArr.slice(lparen+1,rparen))
-			};
-			tokenArr.splice(funcCallIdx, rparen-funcCallIdx+1, funcCallExpr);
+		idIdx = this._indexOfIdentifier(tokenArr);
+		if (idIdx > -1) {
+			if (tokenArr[idIdx + 1] === '(') {
+				// function call
+				var lparen = idIdx + 1;
+				var rparen = this._findMatchingParen(tokenArr, lparen);
+				var funcCallExpr = {
+					type: 'funcCall',
+					funcName: tokenArr[idIdx],
+					args: this._parseFunctionArgs(tokenArr.slice(lparen+1,rparen))
+				};
+				tokenArr.splice(idIdx, rparen-idIdx+1, funcCallExpr);
+			} else {
+				// variable reference. TODO: should we check if it's a known variable here?
+				tokenArr.splice(idIdx, 1, { type: 'variable', varName: tokenArr[idIdx] });
+			}
 		}
-	} while (funcCallIdx > -1);
+	} while (idIdx > -1);
 }
 
 CalculatorParser.prototype._parseFunctionArgs = function (tokenArr) {
@@ -84,7 +109,7 @@ CalculatorParser.prototype._parseFunctionArgs = function (tokenArr) {
 	}, this);
 }
 
-CalculatorParser.prototype._indexOfFuncName = function (tokenArr) {
+CalculatorParser.prototype._indexOfIdentifier = function (tokenArr) {
 	for (var i = 0; i < tokenArr.length; i++) {
 		if (/^[a-z]+$/.test(tokenArr[i])) {
 			return i;
@@ -95,7 +120,9 @@ CalculatorParser.prototype._indexOfFuncName = function (tokenArr) {
 
 CalculatorParser.prototype._parseHelper = function (tokenArr) {
 
-	this._handleFuncCalls(tokenArr);
+	this._handle
+
+	this._handleFuncCallsAndVarRefs(tokenArr);
 
 	// find first left paren. then find maching paren
 	var lparen;
@@ -139,7 +166,7 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 			left: this._parseHelper(tokenArr.slice(0, tokenIdx)),
 			right: this._parseHelper(tokenArr.slice(tokenIdx+1, tokenArr.length))
 		};
-	} else if (tokenArr.length === 1 && ["expr", "pow", "funcCall"].indexOf(tokenArr[0].type) > -1) {
+	} else if (tokenArr.length === 1 && ["expr", "pow", "funcCall", "variable"].indexOf(tokenArr[0].type) > -1) {
 		return tokenArr[0];
 	} else if (tokenArr.length === 1 && /[0-9]+/.test(tokenArr[0])) {
 		return { type: 'number', value: parseInt(tokenArr[0], 10) };

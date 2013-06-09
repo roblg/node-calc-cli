@@ -15,7 +15,7 @@ CalculatorLexer.prototype.tokenize = function () {
 			this.consume();
 		}
 
-		if (['(', ')', '+', '/', ','].indexOf(this.c) > -1) {
+		if (['(', ')', '+', '/', ',', '='].indexOf(this.c) > -1) {
 			this.emit(this.c);
 		} else if (this.c === '*') {
 			if (this.input[this.p + 1] === '*') {
@@ -35,7 +35,7 @@ CalculatorLexer.prototype.tokenize = function () {
 		} else if (this.isNumber(this.c)) {
 			this.number();
 		} else if (this.isCharacter(this.c)) {
-			this.functionName();
+			this.functionOrVariableName();
 		} else {
 			throw 'Illegal: ' + this.c;
 		}
@@ -68,7 +68,7 @@ CalculatorLexer.prototype.number = function () {
 	this.tokens.push(result.join(''));
 }
 
-CalculatorLexer.prototype.functionName = function () {
+CalculatorLexer.prototype.functionOrVariableName = function () {
 	var result = [];
 	do {
 		result.push(this.c);

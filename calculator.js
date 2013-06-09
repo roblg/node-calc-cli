@@ -12,10 +12,12 @@ var rl = readline.createInterface({
 rl.setPrompt('? ');
 rl.prompt();
 
+var env = {};
+
 rl.on('line', function (line) {
 	var tokens = new CalculatorLexer(line.trim()).tokenize();
-	// console.log("=> ", new CalculatorParser(tokens).parse());
-	console.log("=> ", CalculatorParser.evaluate(tokens));
+	// console.log("=> ", new CalculatorParser(tokens, env).parse());
+	console.log("=> ", CalculatorParser.evaluate(tokens, env));
 	rl.prompt();
 }).on('SIGINT', function () {
 	rl.close();
