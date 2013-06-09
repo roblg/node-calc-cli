@@ -100,5 +100,5 @@ Nested function calls are supported as well:
 ### Known Issues
 
 * The error messages thrown by the parser are probably next to worthless most of the time, but if you don't mistype anything, it'll work great!
-* The actual evaluation is currently delegating to the JS engine for evaluation, so it's basically double precision floating point math, which is mostly fine. Someday I plan to integrate (probably very slow) arbitrary-precision arithmetic. I have the beginnings of a [BigInt](https://github.com/roblg/project-euler/blob/master/js/BigInt.js) class in my [projecteuler](http://projecteuler.net) solutions, but it doesn't handle subtraction/division/negative numbers yet.
+* The actual evaluation is currently delegating to the JS engine for evaluation, so it's basically double precision floating point math, which is mostly fine. Someday I plan to integrate (probably very slow) arbitrary-precision arithmetic. I have the beginnings of a [BigInt](https://github.com/roblg/project-euler/blob/master/js/BigInt.js) class in my [projecteuler](http://projecteuler.net) solutions, but it doesn't handle subtraction/division/negative numbers yet. Switching to aribtrary precision numbers would also eliminate the usefulness of the JS Math function passthrough. 
 * I think it would be fun to extend to allow the user to define arbitrary functions.
