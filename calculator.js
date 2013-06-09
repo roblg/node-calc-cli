@@ -14,6 +14,7 @@ rl.prompt();
 
 rl.on('line', function (line) {
 	var tokens = new CalculatorLexer(line.trim()).tokenize();
+	// console.log("=> ", new CalculatorParser(tokens).parse());
 	console.log("=> ", CalculatorParser.evaluate(tokens));
 	rl.prompt();
 }).on('SIGINT', function () {

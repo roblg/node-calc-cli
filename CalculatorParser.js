@@ -14,6 +14,8 @@ CalculatorParser._eval = function (node) {
 		return this._eval(node.subtree);
 	} else if (node.type === 'pow') {
 		return Math.pow( this._eval(node.left), this._eval(node.right) );
+	} else if (node.type === 'funcCall') {
+		return Math[node.funcName].apply(null, node.args.map(this._eval, this));
 	} else if (node.type === 'op') {
 		var left = this._eval(node.left);
 		var right = this._eval(node.right);
@@ -39,7 +41,61 @@ CalculatorParser.prototype._parseParenExpr = function (tokenArr) {
 	return { type: 'expr', subtree: this._parseHelper(tokenArr) }
 }
 
+CalculatorParser.prototype._handleFuncCalls = function (tokenArr) {
+	var funcCallIdx;
+	do {
+		funcCallIdx = this._indexOfFuncName(tokenArr);
+		if (funcCallIdx > -1) {
+			var lparen = funcCallIdx + 1;
+			var rparen = this._findMatchingParen(tokenArr, lparen);
+			var funcCallExpr = {
+				type: 'funcCall',
+				funcName: tokenArr[funcCallIdx],
+				args: this._parseFunctionArgs(tokenArr.slice(lparen+1,rparen))
+			};
+			tokenArr.splice(funcCallIdx, rparen-funcCallIdx+1, funcCallExpr);
+		}
+	} while (funcCallIdx > -1);
+}
+
+CalculatorParser.prototype._parseFunctionArgs = function (tokenArr) {
+	var parenDepth = 0,
+		argTokenArrays = [],
+		temp = [];
+	for (var i = 0; i < tokenArr.length; i++) {
+		if (tokenArr[i] === ',' && parenDepth === 0) {
+			argTokenArrays.push(temp);
+			temp = [];
+		} else {
+			if (tokenArr[i] === '(') {
+				parenDepth += 1;
+			} else if (tokenArr[i] === ')') {
+				parenDepth -= 1;
+			}
+			temp.push(tokenArr[i]);
+		}
+	}
+	if (temp.length > 0) {
+		argTokenArrays.push(temp);
+	}
+
+	return argTokenArrays.map(function (tokens) {
+		return this._parseHelper(tokens);
+	}, this);
+}
+
+CalculatorParser.prototype._indexOfFuncName = function (tokenArr) {
+	for (var i = 0; i < tokenArr.length; i++) {
+		if (/^[a-z]+$/.test(tokenArr[i])) {
+			return i;
+		}
+	}
+	return -1;
+}
+
 CalculatorParser.prototype._parseHelper = function (tokenArr) {
+
+	this._handleFuncCalls(tokenArr);
 
 	// find first left paren. then find maching paren
 	var lparen;
@@ -83,7 +139,7 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 			left: this._parseHelper(tokenArr.slice(0, tokenIdx)),
 			right: this._parseHelper(tokenArr.slice(tokenIdx+1, tokenArr.length))
 		};
-	} else if (tokenArr.length === 1 && (tokenArr[0].type === 'expr' || tokenArr[0].type === 'pow')) {
+	} else if (tokenArr.length === 1 && ["expr", "pow", "funcCall"].indexOf(tokenArr[0].type) > -1) {
 		return tokenArr[0];
 	} else if (tokenArr.length === 1 && /[0-9]+/.test(tokenArr[0])) {
 		return { type: 'number', value: parseInt(tokenArr[0], 10) };

@@ -15,9 +15,7 @@ CalculatorLexer.prototype.tokenize = function () {
 			this.consume();
 		}
 
-		if (this.c === '(' || this.c === ')') {
-			this.emit(this.c);
-		} else if (this.c === '+' || this.c === '/') {
+		if (['(', ')', '+', '/', ','].indexOf(this.c) > -1) {
 			this.emit(this.c);
 		} else if (this.c === '*') {
 			if (this.input[this.p + 1] === '*') {
@@ -36,12 +34,18 @@ CalculatorLexer.prototype.tokenize = function () {
 			}
 		} else if (this.isNumber(this.c)) {
 			this.number();
+		} else if (this.isCharacter(this.c)) {
+			this.functionName();
 		} else {
 			throw 'Illegal: ' + this.c;
 		}
 	}
 
 	return this.tokens;
+}
+
+CalculatorLexer.prototype.isCharacter = function (c) {
+	return /^[a-z]$/.test(c);
 }
 
 CalculatorLexer.prototype.isNumber = function (d) {
@@ -60,6 +64,16 @@ CalculatorLexer.prototype.number = function () {
 		result.push(this.c);
 		this.consume();
 	} while (this.isNumber(this.c));
+
+	this.tokens.push(result.join(''));
+}
+
+CalculatorLexer.prototype.functionName = function () {
+	var result = [];
+	do {
+		result.push(this.c);
+		this.consume();
+	} while (this.isCharacter(this.c));
 
 	this.tokens.push(result.join(''));
 }
