@@ -17,8 +17,16 @@ CalculatorLexer.prototype.tokenize = function () {
 
 		if (this.c === '(' || this.c === ')') {
 			this.emit(this.c);
-		} else if (this.c === '+' || this.c === '/' || this.c === '*') {
+		} else if (this.c === '+' || this.c === '/') {
 			this.emit(this.c);
+		} else if (this.c === '*') {
+			if (this.input[this.p + 1] === '*') {
+				this.tokens.push('**');
+				this.consume();
+				this.consume();
+			} else {
+				this.emit('*');
+			}
 		} else if (this.c === '-') {
 			if (this.isNumber(this.input[this.p + 1])) {
 				// this is a negative number

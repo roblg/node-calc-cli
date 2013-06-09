@@ -12,6 +12,8 @@ CalculatorParser._eval = function (node) {
 		return node.value;
 	} else if (node.type === 'expr') {
 		return this._eval(node.subtree);
+	} else if (node.type === 'pow') {
+		return Math.pow( this._eval(node.left), this._eval(node.right) );
 	} else if (node.type === 'op') {
 		var left = this._eval(node.left);
 		var right = this._eval(node.right);
@@ -51,6 +53,21 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 		// console.log(tokenArr);
 	} while (lparen > -1);
 
+	var powIdx;
+	do {
+		powIdx = tokenArr.indexOf('**');
+		// at this point we know that parentheses have been evaluated, so 
+		// we can just look at the token before and after the '**'
+		if (powIdx > -1) {
+			var powExpr = { 
+				type: 'pow', 
+				left: this._parseHelper([ tokenArr[powIdx-1] ]), 
+				right: this._parseHelper([ tokenArr[powIdx+1] ])
+			};
+			tokenArr.splice(powIdx - 1, 3, powExpr);
+		}
+	} while (powIdx > -1);
+
 	var ops = ["+", "-", "*", "/"];
 
 	var i, // index into ops array
@@ -66,12 +83,12 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 			left: this._parseHelper(tokenArr.slice(0, tokenIdx)),
 			right: this._parseHelper(tokenArr.slice(tokenIdx+1, tokenArr.length))
 		};
-	} else if (tokenArr.length === 1 && tokenArr[0].type === 'expr') {
+	} else if (tokenArr.length === 1 && (tokenArr[0].type === 'expr' || tokenArr[0].type === 'pow')) {
 		return tokenArr[0];
 	} else if (tokenArr.length === 1 && /[0-9]+/.test(tokenArr[0])) {
 		return { type: 'number', value: parseInt(tokenArr[0], 10) };
 	}
-	throw 'Unknown';
+	throw 'Unknown: ' + JSON.stringify(tokenArr);
 }
 
 CalculatorParser.prototype._findMatchingParen = function (tokens, lparenIdx) {
