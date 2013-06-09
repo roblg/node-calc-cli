@@ -12,12 +12,19 @@ var rl = readline.createInterface({
 rl.setPrompt('? ');
 rl.prompt();
 
-var env = {};
+var debug = (process.argv.slice(2).indexOf('-debug') > -1);
+var env = {}; // holds variable values
 
 rl.on('line', function (line) {
-	var tokens = new CalculatorLexer(line.trim()).tokenize();
-	// console.log("=> ", new CalculatorParser(tokens, env).parse());
-	console.log("=> ", CalculatorParser.evaluate(tokens, env));
+	try {
+		var tokens = new CalculatorLexer(line.trim()).tokenize();
+		if (debug) {
+			console.log("=> ", new CalculatorParser(tokens, env).parse());
+		}
+		console.log("=> ", CalculatorParser.evaluate(tokens, env));
+	} catch (e) {
+		console.log("Error:", e);
+	}
 	rl.prompt();
 }).on('SIGINT', function () {
 	rl.close();

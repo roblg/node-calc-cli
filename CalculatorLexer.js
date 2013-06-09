@@ -55,7 +55,7 @@ CalculatorLexer.prototype.isCharacter = function (c) {
 }
 
 CalculatorLexer.prototype.isNumber = function (d) {
-	return /^[0-9]$/.test(d);
+	return /^[0-9.]$/.test(d);
 }
 
 CalculatorLexer.prototype.symbol = function () {
@@ -75,9 +75,13 @@ CalculatorLexer.prototype.number = function () {
 	do {
 		result.push(this.c);
 		this.consume();
-	} while (this.isNumber(this.c));
+	} while (this.c === '.' || this.isNumber(this.c));
 
-	return result.join('');
+	var numStr = result.join('');
+	if (/^.*\..*\..*$/.test(numStr)) {
+		throw 'Invalid number: ' + numStr;
+	}
+	return numStr;
 }
 
 CalculatorLexer.prototype.functionOrVariableName = function () {

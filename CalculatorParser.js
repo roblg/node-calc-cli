@@ -177,8 +177,8 @@ CalculatorParser.prototype._parseHelper = function (tokenArr) {
 		};
 	} else if (tokenArr.length === 1 && ["expr", "pow", "funcCall", "variable"].indexOf(tokenArr[0].type) > -1) {
 		return tokenArr[0];
-	} else if (tokenArr.length === 1 && /[0-9]+/.test(tokenArr[0])) {
-		return { type: 'number', value: parseInt(tokenArr[0], 10) };
+	} else if (tokenArr.length === 1 && /[-0-9.]+/.test(tokenArr[0])) {
+		return { type: 'number', value: parseFloat(tokenArr[0]) };
 	}
 	throw 'Unknown: ' + JSON.stringify(tokenArr);
 }
